@@ -1,4 +1,4 @@
--- Modern Clean Player List + Selectable Target + Safe Auto Grab (Persistent & Optimized)
+-- Modern Clean Player List + Selectable Target + Safe Auto Grab (Fixed Version)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,9 +8,9 @@ local LocalPlayer = Players.LocalPlayer
 local UIS = UserInputService
 local GrabEvent = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Grab")
 
-local ActivePlayers = {} -- persistent selected players
+local ActivePlayers = {}
 
---== GUI SETUP ==--
+-- UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ModernPlayerList"
 ScreenGui.ResetOnSpawn = false
@@ -19,91 +19,71 @@ ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 local Frame = Instance.new("Frame")
 Frame.Size = UDim2.new(0, 180, 0, 240)
 Frame.Position = UDim2.new(1, -200, 0.25, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 80, 200) -- Blue theme
-Frame.BackgroundTransparency = 0
+Frame.BackgroundColor3 = Color3.fromRGB(30, 80, 200)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
 
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 14)
-UICorner.Parent = Frame
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,14)
 
 local Scroller = Instance.new("ScrollingFrame")
 Scroller.Parent = Frame
 Scroller.Size = UDim2.new(1, -10, 1, -10)
 Scroller.Position = UDim2.new(0, 5, 0, 5)
 Scroller.BackgroundTransparency = 1
-Scroller.BorderSizePixel = 0
 Scroller.ScrollBarThickness = 3
 
 local UIList = Instance.new("UIListLayout")
 UIList.Parent = Scroller
 UIList.Padding = UDim.new(0, 6)
 
-local UIPadding = Instance.new("UIPadding")
-UIPadding.Parent = Scroller
-UIPadding.PaddingTop = UDim.new(0, 6)
-UIPadding.PaddingLeft = UDim.new(0, 6)
+Instance.new("UIPadding", Scroller).PaddingTop = UDim.new(0,6)
 
---== UI BUILDER (efficient refresh) ==--
+-- Refresh List
 local function RefreshList()
     for _, child in ipairs(Scroller:GetChildren()) do
         if child:IsA("Frame") then
             child:Destroy()
         end
-    end
+    end    
 
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             local item = Instance.new("Frame")
             item.Size = UDim2.new(1, -10, 0, 32)
-            item.BackgroundColor3 = Color3.fromRGB(50, 130, 255) -- lighter blue for items
+            item.BackgroundColor3 = Color3.fromRGB(50,130,255)
             item.BorderSizePixel = 0
             item.Parent = Scroller
 
-            local icorner = Instance.new("UICorner")
-            icorner.CornerRadius = UDim.new(0, 10)
-            icorner.Parent = item
+            Instance.new("UICorner", item).CornerRadius = UDim.new(0,10)
 
             local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, -10, 1, 0)
-            label.Position = UDim2.new(0, 10, 0, 0)
+            label.Size = UDim2.new(1,-10,1,0)
+            label.Position = UDim2.new(0,10,0,0)
             label.BackgroundTransparency = 1
-            label.TextColor3 = ActivePlayers[plr] and Color3.fromRGB(0, 255, 150) or Color3.fromRGB(255, 255, 255)
-            label.Text = "• " .. plr.DisplayName
-            label.TextXAlignment = Enum.TextXAlignment.Left
+            label.TextColor3 = ActivePlayers[plr] and Color3.fromRGB(0,255,150) or Color3.new(1,1,1)
+            label.Text = "• "..plr.DisplayName
             label.Font = Enum.Font.GothamMedium
             label.TextSize = 15
+            label.TextXAlignment = Enum.TextXAlignment.Left
             label.Parent = item
 
             local button = Instance.new("TextButton")
             button.BackgroundTransparency = 1
-            button.Size = UDim2.new(1, 0, 1, 0)
+            button.Size = UDim2.new(1,0,1,0)
             button.Text = ""
             button.Parent = item
 
             button.MouseButton1Click:Connect(function()
-                if ActivePlayers[plr] then
-                    ActivePlayers[plr] = nil
-                    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-                else
-                    ActivePlayers[plr] = true
-                    label.TextColor3 = Color3.fromRGB(0, 255, 150)
-                end
+                ActivePlayers[plr] = not ActivePlayers[plr]
+                label.TextColor3 = ActivePlayers[plr] and Color3.fromRGB(0,255,150) or Color3.new(1,1,1)
             end)
         end
     end
 
-    Scroller.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
+    Scroller.CanvasSize = UDim2.new(0,0,0,UIList.AbsoluteContentSize.Y + 20)
 end
 
-Players.PlayerAdded:Connect(function(plr)
-    plr.CharacterAdded:Connect(function()
-        RefreshList()
-    end)
-    RefreshList()
-end)
-
+Players.PlayerAdded:Connect(RefreshList)
 Players.PlayerRemoving:Connect(function(plr)
     ActivePlayers[plr] = nil
     RefreshList()
@@ -111,40 +91,26 @@ end)
 
 RefreshList()
 
---== HIDE / SHOW BUTTON ==--
+-- Toggle Button
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 70, 0, 26)
-ToggleButton.Position = UDim2.new(1, -200, 0.25 - 0.08, 0)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(40, 100, 255)
-ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.Size = UDim2.new(0,70,0,26)
+ToggleButton.Position = UDim2.new(1,-200,0.25-0.08,0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(40,100,255)
+ToggleButton.TextColor3 = Color3.new(1,1,1)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 14
 ToggleButton.Text = "Hide"
 ToggleButton.Parent = ScreenGui
-
-local tbCorner = Instance.new("UICorner")
-tbCorner.CornerRadius = UDim.new(0, 8)
-tbCorner.Parent = ToggleButton
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0,8)
 
 ToggleButton.MouseButton1Click:Connect(function()
     Frame.Visible = not Frame.Visible
     ToggleButton.Text = Frame.Visible and "Hide" or "Show"
 end)
 
---== GUIDES BUTTON BESIDE HIDE/SHOW ==--
-local GuidesButton = Instance.new("TextButton")
-GuidesButton.Size = ToggleButton.Size -- same size
-GuidesButton.Position = ToggleButton.Position + UDim2.new(0, 80, 0, 0) -- 80 pixels to the right
-GuidesButton.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
-GuidesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-GuidesButton.Font = Enum.Font.Gotham
-GuidesButton.TextSize = 14
-GuidesButton.Text = "Guides"
-GuidesButton.Parent = ScreenGui
-
---== ENABLE / DISABLE WITH KEY ==--
+-- KEY TO HIDE
 local enabled = true
-UIS.InputBegan:Connect(function(input, gp)
+UIS.InputBegan:Connect(function(input,gp)
     if gp then return end
     if input.KeyCode == Enum.KeyCode.P then
         enabled = not enabled
@@ -154,77 +120,30 @@ UIS.InputBegan:Connect(function(input, gp)
     end
 end)
 
---== FIND NEAREST SELECTED PLAYER ==--
-local function getNearestActivePlayer(maxDistance)
-    local nearestPlayer = nil
-    local shortestDistance = maxDistance or 10
 
-    local char = LocalPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local root = char.HumanoidRootPart
 
-    for plr, _ in pairs(ActivePlayers) do
-        if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            local dist = (root.Position - plr.Character.HumanoidRootPart.Position).Magnitude
-            if dist < shortestDistance then
-                shortestDistance = dist
-                nearestPlayer = plr
-            end
-        end
-    end
+-- Guides button
+local GuidesButton = Instance.new("TextButton")
+GuidesButton.Size = UDim2.new(0, 70, 0, 26)
+GuidesButton.Position = ToggleButton.Position + UDim2.new(0, 80, 0, 0)
+GuidesButton.BackgroundColor3 = Color3.fromRGB(60, 140, 255)
+GuidesButton.TextColor3 = Color3.new(1,1,1)
+GuidesButton.Font = Enum.Font.Gotham
+GuidesButton.TextSize = 14
+GuidesButton.Text = "Guides"
+GuidesButton.Parent = ScreenGui
 
-    return nearestPlayer
-end
+Instance.new("UICorner", GuidesButton).CornerRadius = UDim.new(0,8)
 
---== GRAB FUNCTION ==--
-local function grabNearestActive()
-    local target = getNearestActivePlayer(10)
-    if target and target.Character and target.Character:FindFirstChild("Head") then
-        local head = target.Character.Head
-        GrabEvent:FireServer(head, "Grab", head.Position, head.CFrame)
-    end
-end
-
---== PRESS 2 → SINGLE GRAB ==--
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.Two then
-        grabNearestActive()
-    end
-end)
-
---== HOLD 3 → AUTO GRAB UNTIL RELEASE ==--
-local holding3 = false
-UIS.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.Three then
-        if not holding3 then
-            holding3 = true
-            spawn(function()
-                while holding3 do
-                    grabNearestActive()
-                    wait(0.2)
-                end
-            end)
-        end
-    end
-end)
-
-UIS.InputEnded:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Three then
-        holding3 = false
-    end
-end)
-
---== POPUP WITH SEMI-TRANSPARENT BACKGROUND ==--
+-- Popup Background
 local BGFrame = Instance.new("Frame")
 BGFrame.Size = UDim2.new(1,0,1,0)
-BGFrame.Position = UDim2.new(0,0,0,0)
-BGFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+BGFrame.BackgroundColor3 = Color3.new(0,0,0)
 BGFrame.BackgroundTransparency = 0.5
 BGFrame.Visible = false
 BGFrame.Parent = ScreenGui
 
+-- Popup Window
 local PopupFrame = Instance.new("Frame")
 PopupFrame.Size = UDim2.new(0, 500, 0, 400)
 PopupFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
@@ -233,48 +152,47 @@ PopupFrame.BorderSizePixel = 0
 PopupFrame.Visible = false
 PopupFrame.Parent = ScreenGui
 
-local PopupCorner = Instance.new("UICorner")
-PopupCorner.CornerRadius = UDim.new(0,14)
-PopupCorner.Parent = PopupFrame
+Instance.new("UICorner", PopupFrame).CornerRadius = UDim.new(0,14)
 
+-- Popup Text
 local PopupText = Instance.new("TextLabel")
 PopupText.Size = UDim2.new(1, -20, 1, -20)
 PopupText.Position = UDim2.new(0, 10, 0, 10)
 PopupText.BackgroundTransparency = 1
-PopupText.TextColor3 = Color3.fromRGB(255, 255, 255)
+PopupText.TextColor3 = Color3.new(1,1,1)
 PopupText.TextWrapped = true
 PopupText.TextYAlignment = Enum.TextYAlignment.Top
 PopupText.Font = Enum.Font.Gotham
 PopupText.TextSize = 18
 PopupText.Text = [[
+
+
 This script is made by mchaezter and bobby🌹
-Thank you so much for using it.
 
-HERE MY GUIDES:  
-Press P - to hide all.
+Press P to hide all.
 Press 2 to grab.
-Hold 3 to autoclick the grab but sadly this can only 1 click but it's hold.
+Hold 3 to auto grab (slow for safety).
 
-Also even if the player rejoin they will still be detected as activated.
-Also don't grab while holding any tools, make sure it is in rope/carry.
+Even if the player dies or rejoins they stay selected.
+Make sure you are on carry/rope tool before grabbing.
 
-This script is only made for PC, sorry if you are on mobile but you can't use it ;(
-
-Thank you for listening! I hope you enjoy using it, bye!
+Enjoy using it! 🌹
 ]]
 PopupText.Parent = PopupFrame
 
+-- Close Button (TOP LEFT)
 local CloseButton = Instance.new("TextButton")
-CloseButton.Size = ToggleButton.Size
-CloseButton.Position = UDim2.new(1, -110, 0, 10)
+CloseButton.Size = UDim2.new(0, 70, 0, 26)
+CloseButton.Position = UDim2.new(0, 10, 0, 10) -- TOP LEFT CORNER
 CloseButton.BackgroundColor3 = Color3.fromRGB(0, 0, 180)
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.TextColor3 = Color3.new(1,1,1)
 CloseButton.Font = Enum.Font.Gotham
 CloseButton.TextSize = 14
 CloseButton.Text = "Close"
 CloseButton.Parent = PopupFrame
 
--- Button Click Events
+Instance.new("UICorner", CloseButton).CornerRadius = UDim.new(0,8)
+
 GuidesButton.MouseButton1Click:Connect(function()
     BGFrame.Visible = true
     PopupFrame.Visible = true
@@ -283,4 +201,66 @@ end)
 CloseButton.MouseButton1Click:Connect(function()
     BGFrame.Visible = false
     PopupFrame.Visible = false
+end)
+
+
+-- Nearest Active Player
+local function getNearestActivePlayer(maxDist)
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    local root = char.HumanoidRootPart
+
+    local nearest, bestDist = nil, maxDist or 10
+
+    for plr,_ in pairs(ActivePlayers) do
+        local c = plr.Character
+        if c and c:FindFirstChild("HumanoidRootPart") then
+            local dist = (root.Position - c.HumanoidRootPart.Position).Magnitude
+            if dist < bestDist then
+                bestDist = dist
+                nearest = plr
+            end
+        end
+    end
+    return nearest
+end
+
+-- Grab Function
+local function grabNearestActive()
+    local plr = getNearestActivePlayer(10)
+    if plr and plr.Character and plr.Character:FindFirstChild("Head") then
+        GrabEvent:FireServer(plr.Character.Head)
+    end
+end
+
+-- press 2
+UIS.InputBegan:Connect(function(input,gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Two then
+        grabNearestActive()
+    end
+end)
+
+-- hold 3
+local holding = false
+
+UIS.InputBegan:Connect(function(input,gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.Three then
+        if not holding then
+            holding = true
+            task.spawn(function()
+                while holding do
+                    grabNearestActive()
+                    task.wait(0.18)
+                end
+            end)
+        end
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Three then
+        holding = false
+    end
 end)
